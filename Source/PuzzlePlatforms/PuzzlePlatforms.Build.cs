@@ -21,6 +21,8 @@ public class PuzzlePlatforms : ModuleRules
 		PublicIncludePaths.AddRange(new string[]
 		{
 			"PuzzlePlatforms/Public/Meshes",
+			"PuzzlePlatforms/Public/HUD",
+			"PuzzlePlatforms/Public/Interfaces",
 		});
 	}
 }

@@ -1,5 +1,7 @@
 
 #include "PPGameInstance.h"
+
+#include "PPMainMenuWidget.h"
 #include "Blueprint/UserWidget.h"
 
 UPPGameInstance::UPPGameInstance()
@@ -12,13 +14,24 @@ UPPGameInstance::UPPGameInstance()
     UE_LOG(LogTemp, Display, TEXT("MenuClass - %s"), *MenuClass->GetName());
 }
 
+void UPPGameInstance::LoadMenu()
+{
+    MenuWidget = CreateWidget<UPPMainMenuWidget>(this, MenuClass);
+    if(!MenuWidget) return;
+    
+    MenuWidget->SetMenuInterface(this);
+    MenuWidget->Setup();
+}
+
 void UPPGameInstance::Host()
 {
-    if(!GetWorld()) return;
+    if(!MenuWidget) return;
+    MenuWidget->Teardown();
     
+    if(!GetWorld()) return;
     GetWorld()->ServerTravel("/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap?listen");
     
-    GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Red, TEXT("Host"));
+    GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Red, TEXT("Server was created."));
 }
 
 void UPPGameInstance::Join(const FString& Address)
@@ -34,5 +47,5 @@ void UPPGameInstance::Join(const FString& Address)
     
     ClientPlayerController->ClientTravel(Address, TRAVEL_Absolute);
     
-    GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Red, FString(TEXT("Joining to ") + Address));
+    GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Red, FString(TEXT("Joining to server...") + Address));
 }
