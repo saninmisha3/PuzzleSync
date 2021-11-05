@@ -42,6 +42,9 @@ void UPPGameInstance::Join(const FString& Address)
         return;
     }
 
+    if(!MenuWidget) return;
+    MenuWidget->Teardown();
+    
     const auto ClientPlayerController = GetPrimaryPlayerController();
     if(!ClientPlayerController) return;
     

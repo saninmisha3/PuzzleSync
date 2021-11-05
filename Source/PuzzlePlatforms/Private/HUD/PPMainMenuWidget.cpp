@@ -2,13 +2,18 @@
 #include "HUD/PPMainMenuWidget.h"
 #include "Components/Button.h"
 #include "Interfaces/PPMenuInterface.h"
+#include "Components/WidgetSwitcher.h"
+#include "Components/EditableTextBox.h"
 
 void UPPMainMenuWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
     
     HostButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnHostButtonClicked);
-    JoinButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnJoinButtonClicked);
+    ConnectButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnConnectButtonClicked);
+    
+    JoinButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnOpenJoinMenu);
+    BackButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnOpenMainMenu);
     
     FindPlayerController();
 }
@@ -47,9 +52,22 @@ void UPPMainMenuWidget::OnHostButtonClicked()
     MenuInterface->Host();
 }
 
-void UPPMainMenuWidget::OnJoinButtonClicked()
+void UPPMainMenuWidget::OnOpenJoinMenu()
 {
-    
+    if(!MenuSwitcher) return;
+    MenuSwitcher->SetActiveWidgetIndex(1);
+}
+
+void UPPMainMenuWidget::OnOpenMainMenu()
+{
+    if(!MenuSwitcher) return;
+    MenuSwitcher->SetActiveWidgetIndex(0);
+}
+
+void UPPMainMenuWidget::OnConnectButtonClicked()
+{
+    if(!MenuInterface || !AddressTextBox || AddressTextBox->Text.IsEmpty()) return;
+    MenuInterface->Join(AddressTextBox->GetText().ToString());
 }
 
 bool UPPMainMenuWidget::FindPlayerController()

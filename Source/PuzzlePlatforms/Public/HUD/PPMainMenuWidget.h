@@ -7,6 +7,8 @@
 
 class UButton;
 class IPPMenuInterface;
+class UWidgetSwitcher;
+class UEditableTextBox;
 
 UCLASS()
 class PUZZLEPLATFORMS_API UPPMainMenuWidget : public UUserWidget
@@ -26,6 +28,18 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     UButton* JoinButton;
+    
+    UPROPERTY(meta = (BindWidget))
+    UButton* ConnectButton;
+
+    UPROPERTY(meta = (BindWidget))
+    UButton* BackButton;
+
+    UPROPERTY(meta = (BindWidget))
+    UWidgetSwitcher* MenuSwitcher;
+
+    UPROPERTY(meta = (BindWidget))
+    UEditableTextBox* AddressTextBox;
 
     UPROPERTY()
     APlayerController* ClientPlayerController;
@@ -36,7 +50,13 @@ protected:
     void OnHostButtonClicked();
 
     UFUNCTION()
-    void OnJoinButtonClicked();
+    void OnOpenJoinMenu();
+
+    UFUNCTION()
+    void OnOpenMainMenu();
+
+    UFUNCTION()
+    void OnConnectButtonClicked();
 
     bool FindPlayerController();
 };
