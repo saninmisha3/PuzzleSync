@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Interfaces/PPMenuInterface.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "PPGameInstance.generated.h"
 
 class UPPMainMenuWidget;
@@ -16,6 +17,8 @@ class PUZZLEPLATFORMS_API UPPGameInstance : public UGameInstance, public IPPMenu
 
 public:
     UPPGameInstance();
+
+    virtual void Init() override;
 
     UFUNCTION(BlueprintCallable, Category="Widgets")
     void CreatePauseWidget();
@@ -37,10 +40,12 @@ protected:
     UPPPauseWidget* PauseMenuWidget;
 
     UPROPERTY(EditDefaultsOnly, Category="Levels")
-    FString MainMenuLevelPath; 
+    FString MainMenuLevelPath;
+
+    IOnlineSessionPtr SessionInterface;
 
     UFUNCTION(BlueprintCallable, Exec)
-    void LoadMenu();
+    void LoadMenuWidget();
     
     UFUNCTION(Exec)
     void Host() override;
@@ -50,4 +55,10 @@ protected:
 
     UFUNCTION(Exec)
     void OpenMainMenu() override;
+
+    void OnCreateSessionHandle(const FName SessionName, const bool IsSuccess);
+    void OnDestroySessionHandle(const FName SessionName, const bool IsSuccess);
+
+    void CreateSession();
+    
 };
