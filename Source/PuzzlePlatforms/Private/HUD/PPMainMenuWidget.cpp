@@ -1,9 +1,11 @@
 
 #include "HUD/PPMainMenuWidget.h"
+
+#include "PPMenuInterface.h"
 #include "Components/Button.h"
-#include "Interfaces/PPMenuInterface.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void UPPMainMenuWidget::NativeOnInitialized()
 {
@@ -11,39 +13,12 @@ void UPPMainMenuWidget::NativeOnInitialized()
     
     HostButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnHostButtonClicked);
     ConnectButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnConnectButtonClicked);
+    ExitButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnExitButtonClicked);
     
     JoinButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnOpenJoinMenu);
     BackButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnOpenMainMenu);
     
     FindPlayerController();
-}
-
-void UPPMainMenuWidget::Setup()
-{
-    SetVisibility(ESlateVisibility::Visible);
-    bIsFocusable = 1;
-    AddToViewport();
-
-    if(!FindPlayerController()) return;
-
-    FInputModeUIOnly InputMode;
-    InputMode.SetWidgetToFocus(TakeWidget()); // Need add bIsFocusable to Widget
-    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockInFullscreen);
-    
-    ClientPlayerController->SetInputMode(InputMode);
-    //ClientPlayerController->SetInputMode(FInputModeUIOnly()); Simple Alternative Method
-    
-    ClientPlayerController->bShowMouseCursor = true;
-}
-
-void UPPMainMenuWidget::Teardown()
-{
-    SetVisibility(ESlateVisibility::Hidden);
-    bIsFocusable = 0;
-    
-    if(!FindPlayerController()) return;
-    ClientPlayerController->SetInputMode(FInputModeGameOnly());
-    ClientPlayerController->bShowMouseCursor = false;
 }
 
 void UPPMainMenuWidget::OnHostButtonClicked()
@@ -70,15 +45,8 @@ void UPPMainMenuWidget::OnConnectButtonClicked()
     MenuInterface->Join(AddressTextBox->GetText().ToString());
 }
 
-bool UPPMainMenuWidget::FindPlayerController()
+void UPPMainMenuWidget::OnExitButtonClicked()
 {
-    if(ClientPlayerController) return true;
-    if(!GetWorld()) return false;
-    ClientPlayerController = GetWorld()->GetFirstPlayerController();
-    return ClientPlayerController ? true : false;
-}
-
-void UPPMainMenuWidget::SetMenuInterface(IPPMenuInterface* PtrToMenuInterface)
-{
-    MenuInterface = PtrToMenuInterface;
+    if(!FindPlayerController()) return;
+    UKismetSystemLibrary::QuitGame(GetWorld(), ClientPlayerController, EQuitPreference::Quit, true);
 }

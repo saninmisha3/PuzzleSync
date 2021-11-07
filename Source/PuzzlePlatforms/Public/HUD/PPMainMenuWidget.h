@@ -1,27 +1,21 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include <PPBaseWidget.h>
 #include "PPMainMenuWidget.generated.h"
 
 class UButton;
-class IPPMenuInterface;
 class UWidgetSwitcher;
 class UEditableTextBox;
 
 UCLASS()
-class PUZZLEPLATFORMS_API UPPMainMenuWidget : public UUserWidget
+class PUZZLEPLATFORMS_API UPPMainMenuWidget : public UPPBaseWidget
 {
     GENERATED_BODY()
 
 public:
     virtual void NativeOnInitialized() override;
-    void SetMenuInterface(IPPMenuInterface* PtrToMenuInterface);
 
-    void Setup();
-    void Teardown();
-	
 protected:
     UPROPERTY(meta = (BindWidget))
     UButton* HostButton;
@@ -36,15 +30,13 @@ protected:
     UButton* BackButton;
 
     UPROPERTY(meta = (BindWidget))
+    UButton* ExitButton;
+
+    UPROPERTY(meta = (BindWidget))
     UWidgetSwitcher* MenuSwitcher;
 
     UPROPERTY(meta = (BindWidget))
     UEditableTextBox* AddressTextBox;
-
-    UPROPERTY()
-    APlayerController* ClientPlayerController;
-    
-    IPPMenuInterface* MenuInterface;
 
     UFUNCTION()
     void OnHostButtonClicked();
@@ -58,5 +50,6 @@ protected:
     UFUNCTION()
     void OnConnectButtonClicked();
 
-    bool FindPlayerController();
+    UFUNCTION()
+    void OnExitButtonClicked();
 };
