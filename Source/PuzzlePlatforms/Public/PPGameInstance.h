@@ -26,7 +26,11 @@ public:
     UFUNCTION(BlueprintPure, Category="Widgets")
     FORCEINLINE UPPPauseWidget* GetPauseMenu() const {return PauseMenuWidget;}
 
+    void SetServerIndex(const uint32& Index);
+
 protected:
+    TOptional<uint32> ServerIndex;
+    
     UPROPERTY()
     TSubclassOf<UPPMainMenuWidget> MenuClass;
 
@@ -44,20 +48,28 @@ protected:
 
     IOnlineSessionPtr SessionInterface;
 
+
+    TSharedPtr<FOnlineSessionSearch> SessionSearchPtr;
+
     UFUNCTION(BlueprintCallable, Exec)
     void LoadMenuWidget();
     
     UFUNCTION(Exec)
-    void Host() override;
+    virtual void Host() override;
 
     UFUNCTION(Exec)
-    void Join (const FString& Address) override;
+    virtual void Join (const FString& Address) override;
 
     UFUNCTION(Exec)
-    void OpenMainMenu() override;
+    virtual void OpenMainMenu() override;
+
+    UFUNCTION(Exec)
+    virtual void SearchServers() override;
 
     void OnCreateSessionHandle(const FName SessionName, const bool IsSuccess);
     void OnDestroySessionHandle(const FName SessionName, const bool IsSuccess);
+    void OnFindSessionsHandle(const bool IsSuccess);
+    void OnJoinSessionHandle(const FName SessionName, const EOnJoinSessionCompleteResult::Type ResultType);
 
     void CreateSession();
     

@@ -45,6 +45,8 @@ void UPPGameInstance::Init()
     }
     SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UPPGameInstance::OnCreateSessionHandle);
     SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UPPGameInstance::OnDestroySessionHandle);
+    SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UPPGameInstance::OnFindSessionsHandle);
+    SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UPPGameInstance::OnJoinSessionHandle);
 }
 
 void UPPGameInstance::CreatePauseWidget()
@@ -104,6 +106,40 @@ void UPPGameInstance::OpenMainMenu()
     ClientPlayerController->ClientTravel(MainMenuLevelPath, TRAVEL_Absolute);
 }
 
+void UPPGameInstance::SearchServers()
+{
+    SessionSearchPtr = MakeShareable(new FOnlineSessionSearch());
+    if(!SessionSearchPtr) return;
+    SessionSearchPtr->bIsLanQuery = true; // Search in Local Network
+
+    SessionInterface->FindSessions(0, SessionSearchPtr.ToSharedRef());
+}
+
+void UPPGameInstance::SetServerIndex(const uint32& Index)
+{
+    ServerIndex = Index;
+    
+    if(!ServerIndex.IsSet()) return;
+    UE_LOG(LogSessionInfo, Display, TEXT("Connecting to Server %i"), ServerIndex.GetValue());
+    
+    const auto FindSessionResults = SessionSearchPtr->SearchResults;
+    if(!FindSessionResults.Num()) return;
+    
+    SessionInterface->JoinSession(0,GSession_Name,FindSessionResults[ServerIndex.GetValue()]);
+}
+
+void UPPGameInstance::CreateSession()
+{
+    if(!SessionInterface) return;
+    FOnlineSessionSettings SessionSettings;
+    SessionSettings.bIsLANMatch = true; // Local Network
+    SessionSettings.NumPublicConnections = 2; // Player number
+    SessionSettings.bShouldAdvertise = true; // Can find by search
+    
+    if(SessionInterface->CreateSession(0, GSession_Name, SessionSettings))
+        UE_LOG(LogSessionInfo, Display, TEXT("New %s successfully created."), *GSession_Name.ToString());
+}
+
 void UPPGameInstance::OnCreateSessionHandle(const FName SessionName, const bool IsSuccess)
 {
     if(!MenuWidget || !IsSuccess) return;
@@ -122,10 +158,30 @@ void UPPGameInstance::OnDestroySessionHandle(const FName SessionName, const bool
     CreateSession();
 }
 
-void UPPGameInstance::CreateSession()
+void UPPGameInstance::OnFindSessionsHandle(const bool IsSuccess)
 {
-    if(!SessionInterface) return;
-    FOnlineSessionSettings SessionSettings;
-    if(SessionInterface->CreateSession(0, GSession_Name, SessionSettings))
-        UE_LOG(LogSessionInfo, Display, TEXT("New %s successfully created."), *GSession_Name.ToString());
+    if(!IsSuccess || !SessionSearchPtr || !MenuWidget) return;
+    UE_LOG(LogSessionInfo, Display, TEXT("Find Sessions is Success"));
+
+    const auto FindSessionResults = SessionSearchPtr->SearchResults;
+    if(!FindSessionResults.Num()) return;
+
+    MenuWidget->ClearServerList();
+    uint32 IteratorIndex = 0;
+    for(const auto& Session : FindSessionResults)
+    {
+        if(!Session.IsValid()) continue;
+        MenuWidget->AddServerRow(Session.GetSessionIdStr(), IteratorIndex);
+        UE_LOG(LogSessionInfo, Display, TEXT("Found server - %s"), *Session.GetSessionIdStr());
+        ++IteratorIndex;
+    }
+}
+
+void UPPGameInstance::OnJoinSessionHandle(const FName SessionName, const EOnJoinSessionCompleteResult::Type ResultType)
+{
+    if(ResultType != EOnJoinSessionCompleteResult::Success) return;
+
+    FString TravelURL;
+    if(SessionInterface->GetResolvedConnectString(GSession_Name,TravelURL))
+        Join(TravelURL);
 }
