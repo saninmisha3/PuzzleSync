@@ -15,6 +15,7 @@ void UPPMainMenuWidget::NativeOnInitialized()
     Super::NativeOnInitialized();
     
     HostButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnHostButtonClicked);
+    CreateServerButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnCreateServerButtonClicked);
     ConnectButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnConnectButtonClicked);
     ExitButton->OnClicked.AddDynamic(this, &UPPMainMenuWidget::OnExitButtonClicked);
     
@@ -24,23 +25,26 @@ void UPPMainMenuWidget::NativeOnInitialized()
     FindPlayerController();
 }
 
-void UPPMainMenuWidget::AddServerRow(const FString& ServerName, const uint32 ServerIndex)
+void UPPMainMenuWidget::AddServerRow(const FString& ServerName, const uint32 ServerIndex, const FString& HostName, const uint32 CurrentPlayers, const uint32 MaxPlayers)
 {
     if(!ServerTextBlockClass || !ServerListWrapper) return;
-
+    
     const auto ServerRow = CreateWidget<UPPServerInstanceWidget>(this, ServerTextBlockClass);
     if(!ServerRow) return;
 
-    ServerRow->SetServerText(FText::FromString(ServerName));
-    ServerRow->SetServerIndex(ServerIndex);
+    const FServerData ServerInfo {ServerName,ServerIndex,CurrentPlayers,MaxPlayers,HostName};
+
+    ServerList.Add(ServerInfo);
+
+    ServerRow->SetServerData(&ServerList.Last());
     
     ServerListWrapper->AddChildToVerticalBox(ServerRow);
 }
 
 void UPPMainMenuWidget::OnHostButtonClicked()
 {
-    if(!MenuInterface) return;
-    MenuInterface->Host();
+    if(!MenuSwitcher || !MenuInterface) return;
+    MenuSwitcher->SetActiveWidgetIndex(2);
 }
 
 void UPPMainMenuWidget::OnOpenJoinMenu()
@@ -73,4 +77,9 @@ void UPPMainMenuWidget::OnExitButtonClicked()
 {
     if(!FindPlayerController()) return;
     UKismetSystemLibrary::QuitGame(GetWorld(), ClientPlayerController, EQuitPreference::Quit, true);
+}
+
+void UPPMainMenuWidget::OnCreateServerButtonClicked()
+{
+    MenuInterface->Host(HostServerName->GetText().ToString());
 }

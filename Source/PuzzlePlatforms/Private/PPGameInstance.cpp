@@ -68,15 +68,16 @@ void UPPGameInstance::LoadMenuWidget()
     MenuWidget->Setup();
 }
 
-void UPPGameInstance::Host()
+void UPPGameInstance::Host(const FString& ServerName)
 {
     if(!SessionInterface) return;
 
     const auto SessionName = SessionInterface->GetNamedSession(GSession_Name);
+    
     if(SessionName)
         SessionInterface->DestroySession(GSession_Name);
-    else
-        CreateSession();
+    
+    CreateSession(ServerName);
 }
 
 void UPPGameInstance::Join(const FString& Address)
@@ -110,8 +111,10 @@ void UPPGameInstance::SearchServers()
 {
     SessionSearchPtr = MakeShareable(new FOnlineSessionSearch());
     if(!SessionSearchPtr) return;
-    SessionSearchPtr->bIsLanQuery = true; // Search in Local Network
-
+    SessionSearchPtr->bIsLanQuery = false; // Search in Local Network
+    SessionSearchPtr->MaxSearchResults = 10; // Count of Lobbies for Search Result 
+    SessionSearchPtr->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals); // Find Steam Lobbies
+    
     SessionInterface->FindSessions(0, SessionSearchPtr.ToSharedRef());
 }
 
@@ -128,13 +131,19 @@ void UPPGameInstance::SetServerIndex(const uint32& Index)
     SessionInterface->JoinSession(0,GSession_Name,FindSessionResults[ServerIndex.GetValue()]);
 }
 
-void UPPGameInstance::CreateSession()
+void UPPGameInstance::CreateSession(const FString& ServerName)
 {
     if(!SessionInterface) return;
     FOnlineSessionSettings SessionSettings;
-    SessionSettings.bIsLANMatch = true; // Local Network
+    if(IOnlineSubsystem::Get()->GetSubsystemName() == "NULL")
+        SessionSettings.bIsLANMatch = true; // Local
+    else
+        SessionSettings.bIsLANMatch = false; // Network
+
     SessionSettings.NumPublicConnections = 2; // Player number
     SessionSettings.bShouldAdvertise = true; // Can find by search
+    SessionSettings.bUsesPresence = true; // true = SteamLobby, false = SteamInternet
+    SessionSettings.Set(TEXT("ServerName"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
     
     if(SessionInterface->CreateSession(0, GSession_Name, SessionSettings))
         UE_LOG(LogSessionInfo, Display, TEXT("New %s successfully created."), *GSession_Name.ToString());
@@ -155,7 +164,6 @@ void UPPGameInstance::OnDestroySessionHandle(const FName SessionName, const bool
 {
     if(!IsSuccess) return;
     UE_LOG(LogSessionInfo, Display, TEXT("The %s was destroyed. Start creating a new session."), *SessionName.ToString());
-    CreateSession();
 }
 
 void UPPGameInstance::OnFindSessionsHandle(const bool IsSuccess)
@@ -168,12 +176,18 @@ void UPPGameInstance::OnFindSessionsHandle(const bool IsSuccess)
 
     MenuWidget->ClearServerList();
     uint32 IteratorIndex = 0;
-    for(const auto& Session : FindSessionResults)
+    for(const auto& SessionResult : FindSessionResults)
     {
-        if(!Session.IsValid()) continue;
-        MenuWidget->AddServerRow(Session.GetSessionIdStr(), IteratorIndex);
-        UE_LOG(LogSessionInfo, Display, TEXT("Found server - %s"), *Session.GetSessionIdStr());
-        ++IteratorIndex;
+        if(!SessionResult.IsValid()) continue;
+
+        FString ServerName;
+        SessionResult.Session.SessionSettings.Get(TEXT("ServerName"), ServerName);
+        const auto HostName = SessionResult.Session.OwningUserName;
+        const auto MaxPlayers = SessionResult.Session.SessionSettings.NumPublicConnections;
+        const auto CurrentPlayers = MaxPlayers - SessionResult.Session.NumOpenPublicConnections;
+        
+        MenuWidget->AddServerRow(ServerName, IteratorIndex++, HostName, CurrentPlayers, MaxPlayers);
+        UE_LOG(LogSessionInfo, Display, TEXT("Found server - %s"), *SessionResult.GetSessionIdStr());
     }
 }
 
@@ -182,6 +196,6 @@ void UPPGameInstance::OnJoinSessionHandle(const FName SessionName, const EOnJoin
     if(ResultType != EOnJoinSessionCompleteResult::Success) return;
 
     FString TravelURL;
-    if(SessionInterface->GetResolvedConnectString(GSession_Name,TravelURL))
+    if(SessionInterface->GetResolvedConnectString(SessionName,TravelURL))
         Join(TravelURL);
 }

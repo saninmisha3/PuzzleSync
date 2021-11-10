@@ -55,7 +55,7 @@ protected:
     void LoadMenuWidget();
     
     UFUNCTION(Exec)
-    virtual void Host() override;
+    virtual void Host(const FString& ServerName) override;
 
     UFUNCTION(Exec)
     virtual void Join (const FString& Address) override;
@@ -71,6 +71,6 @@ protected:
     void OnFindSessionsHandle(const bool IsSuccess);
     void OnJoinSessionHandle(const FName SessionName, const EOnJoinSessionCompleteResult::Type ResultType);
 
-    void CreateSession();
+    void CreateSession(const FString& ServerName);
     
 };
