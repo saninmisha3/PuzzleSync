@@ -17,7 +17,8 @@ public class PuzzlePlatforms : ModuleRules
 			"HeadMountedDisplay",
 			"UMG",
 			"OnlineSubsystem",
-			"OnlineSubsystemSteam"
+			"OnlineSubsystemSteam",
+			"EngineSettings",
 		});
 		
 		PublicIncludePaths.AddRange(new string[]

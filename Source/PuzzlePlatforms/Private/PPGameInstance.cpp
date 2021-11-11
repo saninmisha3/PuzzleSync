@@ -7,8 +7,6 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 
-const static FName GSession_Name = "Testing Session";
-
 DEFINE_LOG_CATEGORY_STATIC(LogSessionInfo, All, Log);
 
 UPPGameInstance::UPPGameInstance()
@@ -72,10 +70,10 @@ void UPPGameInstance::Host(const FString& ServerName)
 {
     if(!SessionInterface) return;
 
-    const auto SessionName = SessionInterface->GetNamedSession(GSession_Name);
+    const auto SessionName = SessionInterface->GetNamedSession(NAME_GameSession);
     
     if(SessionName)
-        SessionInterface->DestroySession(GSession_Name);
+        SessionInterface->DestroySession(NAME_GameSession);
     
     CreateSession(ServerName);
 }
@@ -128,12 +126,13 @@ void UPPGameInstance::SetServerIndex(const uint32& Index)
     const auto FindSessionResults = SessionSearchPtr->SearchResults;
     if(!FindSessionResults.Num()) return;
     
-    SessionInterface->JoinSession(0,GSession_Name,FindSessionResults[ServerIndex.GetValue()]);
+    SessionInterface->JoinSession(0,NAME_GameSession,FindSessionResults[ServerIndex.GetValue()]);
 }
 
 void UPPGameInstance::CreateSession(const FString& ServerName)
 {
     if(!SessionInterface) return;
+    
     FOnlineSessionSettings SessionSettings;
     if(IOnlineSubsystem::Get()->GetSubsystemName() == "NULL")
         SessionSettings.bIsLANMatch = true; // Local
@@ -145,8 +144,14 @@ void UPPGameInstance::CreateSession(const FString& ServerName)
     SessionSettings.bUsesPresence = true; // true = SteamLobby, false = SteamInternet
     SessionSettings.Set(TEXT("ServerName"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
     
-    if(SessionInterface->CreateSession(0, GSession_Name, SessionSettings))
-        UE_LOG(LogSessionInfo, Display, TEXT("New %s successfully created."), *GSession_Name.ToString());
+    if(SessionInterface->CreateSession(0, NAME_GameSession, SessionSettings))
+        UE_LOG(LogSessionInfo, Display, TEXT("New session successfully created."));
+}
+
+void UPPGameInstance::StartSession() const
+{
+    if(!SessionInterface) return;
+    SessionInterface->StartSession(NAME_GameSession);
 }
 
 void UPPGameInstance::OnCreateSessionHandle(const FName SessionName, const bool IsSuccess)
@@ -155,7 +160,7 @@ void UPPGameInstance::OnCreateSessionHandle(const FName SessionName, const bool 
     MenuWidget->Teardown();
 
     if(!GetWorld()) return;
-    GetWorld()->ServerTravel("/Game/PuzzlePlatforms/Maps/ThirdPersonExampleMap?listen");
+    GetWorld()->ServerTravel("/Game/PuzzlePlatforms/Maps/Lobby?listen");
     
     GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Red, TEXT("Server was created."));
 }

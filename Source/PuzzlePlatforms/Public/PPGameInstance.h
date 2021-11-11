@@ -27,7 +27,8 @@ public:
     FORCEINLINE UPPPauseWidget* GetPauseMenu() const {return PauseMenuWidget;}
 
     void SetServerIndex(const uint32& Index);
-
+    void StartSession() const;
+    
 protected:
     TOptional<uint32> ServerIndex;
     
@@ -72,5 +73,4 @@ protected:
     void OnJoinSessionHandle(const FName SessionName, const EOnJoinSessionCompleteResult::Type ResultType);
 
     void CreateSession(const FString& ServerName);
-    
 };
